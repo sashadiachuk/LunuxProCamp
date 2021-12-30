@@ -1,0 +1,1 @@
+cmd_/home/odiachuk/Desktop/LunuxProCamp/HW6/button/onboard_io/onboard_io.ko := ccache arm-eabi-ld -r  -EL  --build-id=sha1  -T scripts/module.lds -o /home/odiachuk/Desktop/LunuxProCamp/HW6/button/onboard_io/onboard_io.ko /home/odiachuk/Desktop/LunuxProCamp/HW6/button/onboard_io/onboard_io.o /home/odiachuk/Desktop/LunuxProCamp/HW6/button/onboard_io/onboard_io.mod.o;  true

@@ -2,7 +2,8 @@ ifneq ($(KERNELRELEASE),)
 obj-m := hrt.o  timer.o simple_wq.o
 else
 
-KDIR ?= /lib/modules/`uname -r`/build
+KDIR ?= /home/odiachuk/Desktop/BBB/linux-stable
+#/lib/modules/`uname -r`/build
 default:
 	$(MAKE) -C $(KDIR) M="$$PWD"
 

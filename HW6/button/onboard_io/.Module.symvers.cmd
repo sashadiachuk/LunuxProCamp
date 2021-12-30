@@ -1,0 +1,1 @@
+cmd_/home/odiachuk/Desktop/LunuxProCamp/HW6/button/onboard_io/Module.symvers := sed 's/\.ko$$/\.o/' /home/odiachuk/Desktop/LunuxProCamp/HW6/button/onboard_io/modules.order | scripts/mod/modpost    -o /home/odiachuk/Desktop/LunuxProCamp/HW6/button/onboard_io/Module.symvers -e -i Module.symvers   -T -
