@@ -18,6 +18,10 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("alex170104");
 MODULE_DESCRIPTION("BBB Onboard IO Demo with system timer");
 MODULE_VERSION("0.1");
+MODULE_INFO(vermagic, "5.13.0 SMP mod_unload ARMv7 p2v8 ");
+
+
+
 
 #define GPIO_NUMBER(port, bit) (32 * (port) + (bit))
 
@@ -65,6 +69,7 @@ static int button_gpio_init(int gpio)
 {
 	int rc;
 
+
 	rc = gpio_request(gpio, "Onboard user button");
 	if (rc)
 		goto err_register;
@@ -92,27 +97,32 @@ static void button_gpio_deinit(void)
 }
 static void timer_callback(struct timer_list *timer)
 {
+	static int times = 15;
 	pr_info("timer_callback called (%lu).\n", jiffies);
 	
 	
 
 	button_state = gpio_get_value(button_gpio);
 
-	if (button_state)
-		gpio = LED_MMC;
+	if (button_state){
+		gpio_set_value(led_gpio, 1);
+		pr_info("LED at GPIO%d ON\n", led_gpio);
+	}
+	else
+	{
+		gpio_set_value(led_gpio, 0);
+		pr_info("LED at GPIO%d OFF\n", led_gpio);
+		
 	
-	rc = led_gpio_init(gpio);
-	if (rc) {
-		pr_err("Can't set GPIO%d for output\n", gpio);
-		goto err_led;
 	}
 
-	gpio_set_value(led_gpio, 1);
-	pr_info("LED at GPIO%d ON\n", led_gpio);
-	mod_timer(timer, jiffies + msecs_to_jiffies(100));
+	if(--times)
+	{
+	    mod_timer(timer, jiffies + msecs_to_jiffies(200));
+	}
+
 	
-err_led:
-	button_gpio_deinit();
+
 
 }
 /* Module entry/exit points */
@@ -125,7 +135,15 @@ static int __init onboard_io_init(void)
 		pr_err("Can't set GPIO%d for button\n", BUTTON);
 		goto err_button;
 	}
-
+	
+	pr_info("Button done!\n");
+	gpio = LED_MMC;//gpio = led_gpio - segmentation faul after this line
+	rc = led_gpio_init(gpio);
+	if (rc) {
+		pr_err("Can't set GPIO%d for output\n", gpio);
+		goto err_led;
+	}
+	pr_info("led done!\n");
 	
 	//timer setup below
 	
@@ -142,8 +160,12 @@ static int __init onboard_io_init(void)
 
 	return 0;
 
+err_led:
+	button_gpio_deinit();
 err_button:
 	return rc;
+
+	
 }
 
 static void __exit onboard_io_exit(void)
