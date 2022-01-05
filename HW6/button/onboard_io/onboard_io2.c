@@ -11,17 +11,11 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/gpio.h>
-#include <linux/ktime.h>
-#include <linux/timer.h>
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("alex170104");
-MODULE_DESCRIPTION("BBB Onboard IO Demo with system timer");
+MODULE_AUTHOR("Oleksandr Redchuk (at GL training courses)");
+MODULE_DESCRIPTION("BBB Onboard IO Demo");
 MODULE_VERSION("0.1");
-//MODULE_INFO(vermagic, "5.13.0 SMP mod_unload ARMv7 p2v8 ");
-
-
-
 
 #define GPIO_NUMBER(port, bit) (32 * (port) + (bit))
 
@@ -46,12 +40,6 @@ MODULE_VERSION("0.1");
 
 static int led_gpio = -1;
 static int button_gpio = -1;
-int rc;
-int gpio;
-int button_state;
-static struct timer_list my_timer;
-static unsigned long start;
-static unsigned long delay_in_jiffies = (HZ * 200L) / MSEC_PER_SEC;
 
 static int led_gpio_init(int gpio)
 {
@@ -61,19 +49,18 @@ static int led_gpio_init(int gpio)
 	if (rc)
 		pr_info("request failed");
 		return rc;
+		
 	rc = gpio_direction_output(gpio, 0);
 	if (rc)
 		return rc;
-	gpio_export(gpio, false); 
+
 	led_gpio = gpio;
-	gpio_set_value(led_gpio,1);
 	return 0;
 }
 
 static int button_gpio_init(int gpio)
 {
 	int rc;
-
 
 	rc = gpio_request(gpio, "Onboard user button");
 	if (rc)
@@ -83,9 +70,9 @@ static int button_gpio_init(int gpio)
 	if (rc)
 		goto err_input;
 	
-
+	rc = gpio_export(gpio);
+	
 	button_gpio = gpio;
-	gpio_export(button_gpio, false);
 	pr_info("Init GPIO%d OK\n", button_gpio);
 	return 0;
 
@@ -102,70 +89,40 @@ static void button_gpio_deinit(void)
 		pr_info("Deinit GPIO%d\n", button_gpio);
 	}
 }
-static void timer_callback(struct timer_list *timer)
-{
-	static int times = 15;
-	pr_info("timer_callback called (%lu).\n", jiffies);
-	
-	
 
-	button_state = gpio_get_value(button_gpio);
-	pr_info("state %d \n", button_state);
-	
-	if (button_state){
-		gpio_set_value(led_gpio, 1);
-		pr_info("LED at GPIO%d ON\n", led_gpio);
-	}
-	else
-	{
-		gpio_set_value(led_gpio, 0);
-		pr_info("LED at GPIO%d OFF\n", led_gpio);
-		
-	
-	}
-
-	if(--times)
-	{
-	    mod_timer(timer, jiffies + msecs_to_jiffies(2000));
-	}
-
-	
-
-
-}
 /* Module entry/exit points */
 static int __init onboard_io_init(void)
 {
-	unsigned long now;
-	
+	int rc;
+	int gpio;
+	int button_state;
+
 	rc = button_gpio_init(BUTTON);
+	
 	if (rc) {
 		pr_err("Can't set GPIO%d for button\n", BUTTON);
 		goto err_button;
 	}
-	
-	pr_info("Button done!\n");
-	gpio = LED_SD;//gpio = led_gpio - segmentation faul after this line
+	pr_info("test");
+	button_state = gpio_get_value(button_gpio);
 
+	pr_info("before set leds");
+	gpio = button_state ? LED_MMC : LED_SD;
+	
+	if (rc) {
+		pr_err("Can't set GPIO%d for output\n", gpio);
+		goto err_button;
+	}
+
+        pr_info("before init led");
 	rc = led_gpio_init(gpio);
 	if (rc) {
 		pr_err("Can't set GPIO%d for output\n", gpio);
 		goto err_led;
 	}
-	pr_info("led done!\n");
-	
-	//timer setup below
-	
-
-	pr_info("Timer module installing\n");
-
-	timer_setup(&my_timer, timer_callback, 0);
-
-	now = jiffies;
-	start = now + delay_in_jiffies;
-	pr_info("Starting timer to fire in %lu ms (%lu)\n", start, now);
-
-	mod_timer(&my_timer, start);
+	pr_info("before set led");
+	gpio_set_value(led_gpio, 1);
+	pr_info("LED at GPIO%d ON\n", led_gpio);
 
 	return 0;
 
@@ -173,8 +130,6 @@ err_led:
 	button_gpio_deinit();
 err_button:
 	return rc;
-
-	
 }
 
 static void __exit onboard_io_exit(void)
@@ -183,17 +138,7 @@ static void __exit onboard_io_exit(void)
 		gpio_set_value(led_gpio, 0);
 		pr_info("LED at GPIO%d OFF\n", led_gpio);
 	}
-
-	if (del_timer(&my_timer))
-		pr_info("Рendng timer deleted\n");
-
-	pr_info("Timer module uninstalling\n");
-	gpio_unexport(button_gpio);
-	gpio_unexport(led_gpio);
 	button_gpio_deinit();
-
-
-
 }
 
 module_init(onboard_io_init);
