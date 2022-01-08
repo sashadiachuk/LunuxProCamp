@@ -11,6 +11,9 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/gpio.h>
+#include <linux/debugfs.h>
+#include <linux/delay.h>
+#include <linux/interrupt.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Oleksandr Redchuk (at GL training courses)");
@@ -41,23 +44,35 @@ MODULE_VERSION("0.1");
 
 static int led_gpio = -1;
 static int button_gpio = -1;
-static int press_counter = -1;
+
 
 bool simulate_busy = 0;
-module_param(simulate_busy, bool, S_IRUSR|S_IWUSR);                
+module_param(simulate_busy, bool, S_IRUSR|S_IWUSR);  
+     
+// This directory entry will point to `/sys/kernel/debug/myModule	
+static struct dentry *dir = 0;
+
+struct dentry *dFile;
+
+unsigned int GPIO_irqNumber;
+
+// File `/sys/kernel/debug/example2/counter` points to this variable.
+static int counter = 0;         
+
 
 static irqreturn_t gpio_irq_handler(int irq, void *dev_id)
 {
 /*need to add
   - toggle the led
-  - open file in debug_fs and increment open file in debug_fs and incr. press_counter
+  - open file in debug_fs  incr. press_counter
   
   
    led_gpio = (0x01 ^ led_toggle);  
   gpio_set_value(led_gpio, led_gpio^ 1);*/
  
+  pr_info("Interrupt(Threaded Handler) : button was pressed");
+  counter++;
   
-  press_counter++;
 	
  /*IRQ_HANDLED to return - if we aren`t go to use threaded irq*/
   return IRQ_WAKE_THREAD;
@@ -67,7 +82,7 @@ static irqreturn_t gpio_interrupt_thread_fn(int irq, void *dev_id)
 
  /*need to add
   - open file in debug_fs and read press_counter*/
-  pr_info("Interrupt(Threaded Handler) : button was pressed: %d times ", press_counter);
+  pr_info("Interrupt(Threaded Handler) : button was pressed: %d times ", counter);
   
   if(simulate_busy)
   {
@@ -126,26 +141,37 @@ static int __init onboard_io_init(void)
 	int rc;
 	int gpio;
 	int button_state;
-
+	//This used for storing the IRQ number for the GPIO
+	
+	
+	printk("inited\n");
+	//debugfs
+	dir = debugfs_create_dir("myModule", NULL);//create dir myModule in root dir of debugfs
+	if (dir == NULL) {
+		printk(KERN_ERR "debugfs_create_dir\n");
+		return -ENOMEM;
+	}
+	debugfs_create_u32("counter", S_IRUGO | S_IWUGO, dir, &counter);
+    
+    	
+    	//button
+	
 	rc = button_gpio_init(BUTTON);
 	if (rc) {
 		pr_err("Can't set GPIO%d for button\n", BUTTON);
 		goto err_button;
 	}
 
-	button_state = gpio_get_value(button_gpio);
 	
-	gpio = button_state ? LED_MMC : LED_SD;
-	if (rc) {
-		pr_err("Can't set GPIO%d for output\n", gpio);
-		goto err_button;
-	}
+	
+	//irq
 	GPIO_irqNumber= gpio_to_irq(button_gpio);
+	pr_info("%d",GPIO_irqNumber);
 
 	rc = request_threaded_irq( GPIO_irqNumber,      //IRQ number
                             gpio_irq_handler,   			  //IRQ handler (Top half)
                             gpio_interrupt_thread_fn,   //IRQ Thread handler (Bottom half)
-                            IRQF_TRIGGER_RISING,        //Handler will be called in raising edge
+                            IRQF_TRIGGER_FALLING,        //Handler will be called in raising edge
                             "button_dev",               //used to identify the device name using this IRQ
                             NULL);                      //device id for shared IRQ
    	
@@ -154,16 +180,22 @@ static int __init onboard_io_init(void)
 		goto err_button;
 	}
       
-    
+    //led
+        /*button_state = gpio_get_value(button_gpio);
+	
+	gpio = button_state ? LED_MMC : LED_SD;
 	rc = led_gpio_init(gpio);
 	if (rc) {
 		pr_err("Can't set GPIO%d for output\n", gpio);
 		goto err_led;
 	}
 
-	gpio_set_value(led_gpio, 1);
+	gpio_set_value(led_gpio, 1);*/
 	pr_info("LED at GPIO%d ON\n", led_gpio);
-
+	pr_info("LED at GPIO%d ON counter\n", counter);
+	counter++;
+	pr_info("LED at GPIO%d ON counter\n", counter);
+	counter+=20;
 	return 0;
 
 err_led:
@@ -180,6 +212,8 @@ static void __exit onboard_io_exit(void)
 	}
 	button_gpio_deinit();
 	free_irq(GPIO_irqNumber,NULL);
+	debugfs_remove_recursive(dir);
+	printk("DEinited\n");
 }
 
 module_init(onboard_io_init);
