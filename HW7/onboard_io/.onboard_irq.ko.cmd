@@ -1,0 +1,1 @@
+cmd_/home/odiachuk/Desktop/LunuxProCamp/HW7/onboard_io/onboard_irq.ko := ccache arm-eabi-ld -r  -EL  --build-id=sha1  -T scripts/module.lds -o /home/odiachuk/Desktop/LunuxProCamp/HW7/onboard_io/onboard_irq.ko /home/odiachuk/Desktop/LunuxProCamp/HW7/onboard_io/onboard_irq.o /home/odiachuk/Desktop/LunuxProCamp/HW7/onboard_io/onboard_irq.mod.o;  true

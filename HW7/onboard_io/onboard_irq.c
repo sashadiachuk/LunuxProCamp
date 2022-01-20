@@ -70,7 +70,7 @@ static irqreturn_t gpio_irq_handler(int irq, void *dev_id)
    led_gpio = (0x01 ^ led_toggle);  
   gpio_set_value(led_gpio, led_gpio^ 1);*/
  
-  pr_info("Interrupt(Threaded Handler) : button was pressed");
+  pr_info("Interrupt(Threaded Handler) : button was pressed\n");
   counter++;
   
 	
@@ -87,7 +87,7 @@ static irqreturn_t gpio_interrupt_thread_fn(int irq, void *dev_id)
   if(simulate_busy)
   {
   	msleep(2000);
-  	pr_info("simulation of work done!");
+  	pr_info("simulation of work done!\n");
   }
   
   return IRQ_HANDLED;
@@ -108,7 +108,6 @@ static int led_gpio_init(int gpio)
 static int button_gpio_init(int gpio)
 {
 	int rc;
-
 	rc = gpio_request(gpio, "Onboard user button");
 	if (rc)
 		goto err_register;
@@ -166,7 +165,7 @@ static int __init onboard_io_init(void)
 	
 	//irq
 	GPIO_irqNumber= gpio_to_irq(button_gpio);
-	pr_info("%d",GPIO_irqNumber);
+	pr_info("irq number to register %d",GPIO_irqNumber);
 
 	rc = request_threaded_irq( GPIO_irqNumber,      //IRQ number
                             gpio_irq_handler,   			  //IRQ handler (Top half)
@@ -181,7 +180,7 @@ static int __init onboard_io_init(void)
 	}
       
     //led
-        /*button_state = gpio_get_value(button_gpio);
+       /* button_state = gpio_get_value(button_gpio);
 	
 	gpio = button_state ? LED_MMC : LED_SD;
 	rc = led_gpio_init(gpio);
@@ -192,6 +191,7 @@ static int __init onboard_io_init(void)
 
 	gpio_set_value(led_gpio, 1);*/
 	pr_info("LED at GPIO%d ON\n", led_gpio);
+	//test of debugfs 
 	pr_info("LED at GPIO%d ON counter\n", counter);
 	counter++;
 	pr_info("LED at GPIO%d ON counter\n", counter);
