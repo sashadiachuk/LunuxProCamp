@@ -1,0 +1,1 @@
+cmd_/home/odiachuk/Desktop/LunuxProCamp/HW10/threads.ko := ccache arm-eabi-ld -r  -EL  --build-id=sha1  -T scripts/module.lds -o /home/odiachuk/Desktop/LunuxProCamp/HW10/threads.ko /home/odiachuk/Desktop/LunuxProCamp/HW10/threads.o /home/odiachuk/Desktop/LunuxProCamp/HW10/threads.mod.o;  true

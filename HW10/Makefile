@@ -1,5 +1,5 @@
 ifneq ($(KERNELRELEASE),)
-obj-m := spinlock.o
+obj-m := threads.o
 else
 
 KDIR ?= /home/odiachuk/Desktop/BBB/linux-stable
