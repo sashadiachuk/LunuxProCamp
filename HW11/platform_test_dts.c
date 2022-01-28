@@ -180,6 +180,11 @@ static struct platform_driver plat_dummy_driver = {
 MODULE_DEVICE_TABLE(of, plat_dummy_of_match);
 
 module_platform_driver(plat_dummy_driver);
+/* module_platform_driver() - Helper macro for drivers that don't do
+ * anything special in module init/exit.  This eliminates a lot of
+ * boilerplate.  Each module may only use this macro once, and
+ * calling it replaces module_init() and module_exit()
+ */
 
 MODULE_AUTHOR("Vitaliy Vasylskyy <vitaliy.vasylskyy@globallogic.com>");
 MODULE_DESCRIPTION("Dummy platform driver");

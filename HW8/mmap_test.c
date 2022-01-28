@@ -42,7 +42,7 @@ int main(void)
   unsigned int *vadr;
   unsigned int *kadr;
 
-  int len = NPAGES * getpagesize();
+  int len = NPAGES * getpagesize();//how many pages was requested by the user
 
   if ((fd=open("node", O_RDWR|O_SYNC))<0)
   {
@@ -50,7 +50,7 @@ int main(void)
       exit(-1);
   }
 
-  vadr = mmap(0, len, PROT_READ, MAP_SHARED, fd, 0);
+  vadr = mmap(0, len, PROT_READ, MAP_SHARED, fd, 0);//last argument equel to zero - start mapping from the 0 offset in file
   
   if (vadr == MAP_FAILED)
   {
@@ -69,7 +69,7 @@ int main(void)
   	 printf("succesful vmmalloc mmaping\n");
   }
   
-  kadr = mmap(0, len, PROT_READ|PROT_WRITE, MAP_SHARED| MAP_LOCKED, fd, len);
+  kadr = mmap(0, len, PROT_READ|PROT_WRITE, MAP_SHARED| MAP_LOCKED, fd, len);//last argument equel to len - start mapping from the  offset in 16 pages in file
   
   if (kadr == MAP_FAILED)
   {

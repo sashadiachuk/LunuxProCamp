@@ -55,44 +55,28 @@ static void *kmalloc_ptr;
 
 static vm_fault_t vm_fault(struct vm_fault *vmf)
 {
-	 pr_info("page fault\n");
-	 
 	 /*
 	 //all actions : allocated in virtual address space - >  virt_to_phys converts kernel virtual addresses into physical addresses-> 
 	 obtain page frame number corresponded to physical address -> return page
-	
 	 
-	 in case of vmalloc
 	 
-	 vmf->page = pfn_to_page(vmalloc_to_pfn(vmalloc_area));
-	 
-	 Bus error or mmap input output error -- received during vmalloc tests
-	 
-	 in case of kmalloc
-	 
- 	 vmf->page = pfn_to_page(virt_to_phys((void *)kmalloc_area) >> PAGE_SHIFT);
- 	 
- 	 
- 	 info :
- 	 
- 	 http://www.cs.binghamton.edu/~ghose/CS529/sharedmemmap.htm
- 	 https://sites.google.com/site/lbathen/research/mmap_driver
- 	 https://linux-kernel-labs.github.io/refs/heads/master/labs/memory_mapping.html
-	 
+	 vmf->pgoff - offset wich was used by user for access to the relevant page(to or from which page user want to start mapping, correspond to "offset" argument in usersapce mmap
 	 */
-	 /*vmf->page = pfn_to_page(virt_to_phys((void *)kmalloc_area) >> PAGE_SHIFT);*/
-	  
-	 vmf->page = pfn_to_page(virt_to_phys((void *)kmalloc_area) >> PAGE_SHIFT);
-	 
-	 get_page(vmf->page);    	 /* ->fault handlers should return a
-					 * page here, unless VM_FAULT_NOPAGE
-					 * is set (which is also implied by
-					 * VM_FAULT_ERROR).
-					 */
-		 
-	 pr_info("page fault handler executed\n");
-	 
-	 return 0;
+        if (vmf->vma->vm_pgoff == NPAGES) {
+		 //vmf->page = pfn_to_page(virt_to_phys((void *)kmalloc_area) >> PAGE_SHIFT );//previous version - always read the same addresses, issue to fix:  move in kmalloc area from page to page
+		 vmf->page = virt_to_page((char *)kmalloc_area + PAGE_SIZE * (vmf->pgoff - NPAGES));
+		 get_page(vmf->page); //fault handlers should return a  page here,
+		 pr_warn("kmalloc page fault handler executed\n");
+        }
+        
+        if (vmf->vma->vm_pgoff == 0) {
+		vmf->page = vmalloc_to_page((char *)vmalloc_area + PAGE_SIZE * vmf->pgoff);
+		get_page(vmf->page); 
+		pr_warn("vmalloc page fault handler executed\n");
+                
+        }
+        
+	return 0;
 }
 static void vm_close(struct vm_area_struct *vma)
 {
@@ -125,7 +109,7 @@ int mmap_kmem(struct file *filp, struct vm_area_struct *vma)
                 return -EIO;
 
         /* will map a contiguous physical address space into the virtual space represented by vm_area_struct)*/
-        /* if ((ret = remap_pfn_range(vma,
+       /*  if ((ret = remap_pfn_range(vma,
                                    vma->vm_start,
                                    virt_to_phys((void *)kmalloc_area) >> PAGE_SHIFT,
                                    length,
@@ -143,6 +127,7 @@ int mmap_vmem(struct file *filp, struct vm_area_struct *vma)
         unsigned long start = vma->vm_start;
         char *vmalloc_area_ptr = (char *)vmalloc_area;
         unsigned long pfn;
+        vma->vm_ops = &vm_ops;
 
         /* check length - do not allow larger mappings than the number of
            pages allocated */
@@ -150,16 +135,16 @@ int mmap_vmem(struct file *filp, struct vm_area_struct *vma)
                 return -EIO;
 
         /* loop over all pages, map it page individually */
-       while (length > 0) {
+          /*  while (length > 0) {
                 pfn = vmalloc_to_pfn(vmalloc_area_ptr);
-                if ((ret = remap_pfn_range(vma, start, pfn, PAGE_SIZE,
+               if ((ret = remap_pfn_range(vma, start, pfn, PAGE_SIZE,
                                            PAGE_SHARED)) < 0) {
                         return ret;
                 }
                 start += PAGE_SIZE;
                 vmalloc_area_ptr += PAGE_SIZE;
                 length -= PAGE_SIZE;
-        }
+        }*/
           //pr_info("vmalloc start %lx\n",vma->vm_start);
          // pr_info("vmalloc end %lx\n",vma->vm_end);
         return 0;
@@ -169,8 +154,10 @@ int mmap_vmem(struct file *filp, struct vm_area_struct *vma)
 static int mmap_mmap(struct file *filp, struct vm_area_struct *vma)
 {
         /* at offset 0 we map the vmalloc'd area */
-        if (vma->vm_pgoff == 0) {
+
+         if (vma->vm_pgoff == 0) {
                 return mmap_vmem(filp, vma);
+                
         }
         /* at offset NPAGES we map the kmalloc'd area */
         if (vma->vm_pgoff == NPAGES) {
@@ -216,7 +203,7 @@ static int __init mymmap_init(void)
 
         /* mark the pages reserved */
         for (i = 0; i < NPAGES * PAGE_SIZE; i+= PAGE_SIZE) {
-                SetPageReserved(vmalloc_to_page((void *)(((unsigned long)vmalloc_area) + i)));
+                //SetPageReserved(vmalloc_to_page((void *)(((unsigned long)vmalloc_area) + i)));
                 SetPageReserved(virt_to_page(((unsigned long)kmalloc_area) + i));
         }
 
@@ -228,7 +215,7 @@ static int __init mymmap_init(void)
                 kmalloc_area[i + 1] = (0xbeef << 16) + i;
         }
         
-        return ret;
+     return ret;
         
   out_unalloc_region:
         unregister_chrdev_region(mmap_dev, 1);
