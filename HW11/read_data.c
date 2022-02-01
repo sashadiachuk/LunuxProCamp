@@ -36,6 +36,7 @@ int main(int argc, char **argv)
 	}
 	
 	reg_addr = (unsigned int *) mmap(0, REG_SIZE, PROT_WRITE |PROT_READ, MAP_SHARED, fd, REG_BASE);
+	
 	//map registers of the device in address space of our machine 
 	time_addr = (unsigned int *) mmap(0, TIME_SIZE, PROT_WRITE |PROT_READ, MAP_SHARED, fd, TIME_BASE);
 	if(reg_addr == NULL)
@@ -43,7 +44,8 @@ int main(int argc, char **argv)
 		printf("Can't mmap\n");
 		return -1;
 	}
-	
+	printf("tut\n");
+	printf("%p\n", time_addr);
 	jiffies_data=*time_addr;
 	printf("jiffies_data: %u\n", jiffies_data);
 
