@@ -62,6 +62,9 @@ static vm_fault_t vm_fault(struct vm_fault *vmf)
 	 
 	 vmf->pgoff - offset wich was used by user for access to the relevant page(to or from which page user want to start mapping, correspond to "offset" argument in usersapce mmap
 	 */
+	 printk("vmf->vma->vm_pgoff - %ld\n",vmf->vma->vm_pgoff);
+	 printk("vmf->pgoff-%ld\n",vmf->pgoff);
+	 
         if (vmf->vma->vm_pgoff == NPAGES) {
 		 //vmf->page = pfn_to_page(virt_to_phys((void *)kmalloc_area) >> PAGE_SHIFT );//previous version - always read the same addresses, issue to fix:  move in kmalloc area from page to page
 		 vmf->page = virt_to_page((char *)kmalloc_area + PAGE_SIZE * (vmf->pgoff - NPAGES));

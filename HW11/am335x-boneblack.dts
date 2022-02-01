@@ -4209,7 +4209,13 @@
   compatible = "ti,plat_dummy";
   reg = <0x9f200000 0x1000>,
    <0x9f201000 0x8>,
-   <0x9f201008 0x4>;
+   <0x9f201008 0x8>;
+   };
+   dummy@9f202000 {
+  compatible = "ti,plat_dummy";
+  reg = <0x9f202000 0x1000>,
+   <0x9f203000 0x8>,
+   <0x9f203008 0x8>;
    };
 };
 

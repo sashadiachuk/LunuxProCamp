@@ -77,6 +77,7 @@ static void plat_dummy_work(struct work_struct *work)//callback function of work
 	my_device = container_of(work, struct plat_dummy_device, dwork.work);
 	status = plat_dummy_reg_read32(my_device, PLAT_IO_FLAG_REG);
 	//plat_dummy_reg_write32(my_device, PLAT_IO_FLAG_REG+TIME_SIZE, );
+	
 	iowrite32(jiffies, my_device->time_reg);
 	pr_info("dev/mem/ write ok\n");
 	
