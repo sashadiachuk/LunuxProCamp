@@ -7,17 +7,7 @@
 #include <linux/of_device.h>
 #include <asm/io.h>
 
-/*=== info ===*/
-/*
-https://stackoverflow.com/questions/15610570/what-is-the-difference-between-a-linux-platform-driver-and-normal-device-driver
 
-https://superuser.com/questions/71389/what-is-dev-mem/1099073
-
-
-
-
-
-*/
 
 #define DRV_NAME  "plat_dummy"
 /*Device has 2 resources:
@@ -31,23 +21,37 @@ https://superuser.com/questions/71389/what-is-dev-mem/1099073
 #define MEM_SIZE	(4096)
 #define REG_SIZE	(8)
 #define DEVICE_POOLING_TIME_MS (500) /*500 ms*/
-/**/
+/*for read*/
 #define PLAT_IO_FLAG_REG		(0) /*Offset of flag register*/
 #define PLAT_IO_SIZE_REG		(4) /*Offset of flag register*/
 #define PLAT_IO_DATA_READY	(1) /*IO data ready flag */
 #define MAX_DUMMY_PLAT_THREADS 1 /*Maximum amount of threads for this */
+/*for write*/
+#define TIME_SIZE	(4)
 
 
-/*================= Defining a platform device ================*/
 
+
+
+
+
+//homework(write data from kernel to device) read from dev/mem -> create buffer for data in dev/mem, adress range for reg counter and  synch flag, and we need separated workqueue, which will send data from kernel(e.g. jiffies values with some period)
+
+// and create userspace program which will read data from device(dev/mem)
+
+//list of resourses of the device 
 struct plat_dummy_device {
 	void __iomem *mem;
 	void __iomem *regs;
+	void __iomem *time_reg;//need to map
 	struct delayed_work     dwork;
 	struct workqueue_struct *data_read_wq;
 	u64 js_pool_time;
+	u64 jiffies_to_send;//data to sent in devmem
+	spinlock_t lock;
 };
 
+/*The proper way of getting at I/O memory is via a set of functions (defined via <asm/io.h>) provided for that purpose.*/
 static u32 plat_dummy_mem_read8(struct plat_dummy_device *my_dev, u32 offset)
 {
 	return ioread8(my_dev->mem + offset);
@@ -62,16 +66,20 @@ static void plat_dummy_reg_write32(struct plat_dummy_device *my_dev, u32 offset,
 	iowrite32(val, my_dev->regs + offset);
 }
 
-static void plat_dummy_work(struct work_struct *work)
+static void plat_dummy_work(struct work_struct *work)//callback function of workqueue
 {
 	struct plat_dummy_device *my_device;
 	u32 i, size, status;
 	u8 data;
-
+		
 	pr_info("++%s(%u)\n", __func__, jiffies_to_msecs(jiffies));
 
 	my_device = container_of(work, struct plat_dummy_device, dwork.work);
 	status = plat_dummy_reg_read32(my_device, PLAT_IO_FLAG_REG);
+	//plat_dummy_reg_write32(my_device, PLAT_IO_FLAG_REG+TIME_SIZE, );
+	iowrite32(jiffies, my_device->time_reg);
+	pr_info("dev/mem/ write ok\n");
+	
 
 	if (status & PLAT_IO_DATA_READY) {
 		size = plat_dummy_reg_read32(my_device, PLAT_IO_SIZE_REG);
@@ -85,21 +93,33 @@ static void plat_dummy_work(struct work_struct *work)
 			pr_info("%s: mem[%d] = 0x%x ('%c')\n", __func__,  i, data, data);
 		}
 		rmb();
+		
 		status &= ~PLAT_IO_DATA_READY;
-		plat_dummy_reg_write32(my_device, PLAT_IO_FLAG_REG, status);
+		plat_dummy_reg_write32(my_device, PLAT_IO_FLAG_REG, status);//change status of the data buffer, back to zero
 
 	}
-	queue_delayed_work(my_device->data_read_wq, &my_device->dwork, my_device->js_pool_time);
+	//queue_delayed_work(my_device->data_read_wq, &my_device->dwork, my_device->js_pool_time);//restart
+		//iowrite32(jiffies, my_device->jiffies_to_send);//write to /dev/mem/
+	
+	
 }
 
-/*================= compatible driver`s with plat_dummy_device ================*/
+	/*static inline void plat_dummy_write_current_time(struct plat_dummy_device *dev)
+{
+	plat_dummy_time_reg_lock(dev);
+	iowrite32(jiffies, dev->time_reg);
+	plat_dummy_time_reg_unlock(dev);
+}*/
+
+
+
 static const struct of_device_id plat_dummy_of_match[] = {
 	{
 		.compatible = "ti,plat_dummy",
 	}, {
 	},
  };
-/*================= init driver ================*/
+
 static int plat_dummy_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -114,7 +134,13 @@ static int plat_dummy_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 	pr_info("Device name: %s\n", np->name);
-	my_device = devm_kzalloc(dev, sizeof(struct plat_dummy_device), GFP_KERNEL);
+	
+	/*
+	
+	kzalloc() allocates kernel memory like kmalloc(), but it also zero-initializes the allocated memory.
+	The memory allocated with devm_kzalloc() is freed automatically.
+	*/
+	my_device = devm_kzalloc(dev, sizeof(struct plat_dummy_device), GFP_KERNEL);//create instance of device driver.
 	if (!my_device)
 		return -ENOMEM;
 
@@ -126,17 +152,26 @@ static int plat_dummy_probe(struct platform_device *pdev)
 	if (IS_ERR(my_device->mem))
 		return PTR_ERR(my_device->mem);
 
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 1);//get a resource for a  device .
 	pr_info("res 1 = %zx..%zx\n", res->start, res->end);
+	
+	
 
 	my_device->regs = devm_ioremap_resource(&pdev->dev, res);
 	if (IS_ERR(my_device->regs))
 		return PTR_ERR(my_device->regs);
 
-	platform_set_drvdata(pdev, my_device);
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 2);//get a resource for a  device .
+	pr_info("res 2 = %zx..%zx\n", res->start, res->end);
+	
+	my_device->time_reg = devm_ioremap_resource(&pdev->dev, res);
+
+	platform_set_drvdata(pdev, my_device);//add date related to my device to the device struct
 
 	pr_info("Memory mapped to %p\n", my_device->regs);
 	pr_info("Registers mapped to %p\n", my_device->mem);
+	pr_info("time_reg mapped to %p\n", my_device->time_reg);
+	
 
 	/*Init data read WQ*/
 	my_device->data_read_wq = alloc_workqueue("plat_dummy_read",
@@ -151,7 +186,7 @@ static int plat_dummy_probe(struct platform_device *pdev)
 
 	return PTR_ERR_OR_ZERO(my_device->mem);
 }
-/*================= exit driver ================*/
+
 static int plat_dummy_remove(struct platform_device *pdev)
 {
 	struct plat_dummy_device *my_device = platform_get_drvdata(pdev);
@@ -167,7 +202,6 @@ static int plat_dummy_remove(struct platform_device *pdev)
         return 0;
 }
 
-/*=============== Defining platform driver ==================*/
 static struct platform_driver plat_dummy_driver = {
 	.driver = {
 		.name = DRV_NAME,
@@ -180,11 +214,6 @@ static struct platform_driver plat_dummy_driver = {
 MODULE_DEVICE_TABLE(of, plat_dummy_of_match);
 
 module_platform_driver(plat_dummy_driver);
-/* module_platform_driver() - Helper macro for drivers that don't do
- * anything special in module init/exit.  This eliminates a lot of
- * boilerplate.  Each module may only use this macro once, and
- * calling it replaces module_init() and module_exit()
- */
 
 MODULE_AUTHOR("Vitaliy Vasylskyy <vitaliy.vasylskyy@globallogic.com>");
 MODULE_DESCRIPTION("Dummy platform driver");
