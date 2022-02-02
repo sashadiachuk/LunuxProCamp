@@ -1,1 +1,0 @@
-cmd_/home/odiachuk/Desktop/LunuxProCamp/HW11/platform_test_dts.mod := { echo  /home/odiachuk/Desktop/LunuxProCamp/HW11/platform_test_dts.o;  echo; } > /home/odiachuk/Desktop/LunuxProCamp/HW11/platform_test_dts.mod
