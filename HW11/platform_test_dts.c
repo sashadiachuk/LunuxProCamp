@@ -20,7 +20,7 @@
 */
 #define MEM_SIZE	(4096)
 #define REG_SIZE	(8)
-#define DEVICE_POOLING_TIME_MS (5000) /*500 ms*/
+#define DEVICE_POOLING_TIME_MS (1000) /*500 ms*/
 /*for read*/
 #define PLAT_IO_FLAG_REG		(0) /*Offset of flag register*/
 #define PLAT_IO_SIZE_REG		(4) /*Offset of flag register*/
@@ -36,8 +36,11 @@ struct plat_dummy_device {
 	void __iomem *mem;
 	void __iomem *regs;
 	struct delayed_work     dwork;
+	struct delayed_work     dwork_write;
 	struct workqueue_struct *data_read_wq;
+	struct workqueue_struct *data_write_wq;
 	u64 js_pool_time;
+	u64 js_pool_time_write;
 	u64 jiffies_to_send;//data to sent in devmem
 	spinlock_t lock;
 };
@@ -57,7 +60,7 @@ static void plat_dummy_reg_write32(struct plat_dummy_device *my_dev, u32 offset,
 	iowrite32(val, my_dev->regs + offset);
 }
 
-static void plat_dummy_work(struct work_struct *work)//callback function of workqueue
+static void plat_dummy_work_read(struct work_struct *work)//callback function of workqueue
 {
 	struct plat_dummy_device *my_device;
 	u32 i, size, status;
@@ -86,10 +89,28 @@ static void plat_dummy_work(struct work_struct *work)//callback function of work
 
 	}
 	queue_delayed_work(my_device->data_read_wq, &my_device->dwork, my_device->js_pool_time);//restart
-	iowrite32(jiffies, my_device->mem);
-	wmb();
-	pr_info("dev/mem/ write ok\n");
+	
 			
+}
+static void plat_dummy_work_write(struct work_struct *work)//callback function of workqueue
+{
+	
+	struct plat_dummy_device *my_device;
+			
+			
+	pr_info("++%s(%u)\n", __func__, jiffies_to_msecs(jiffies));
+	
+	my_device = container_of(work, struct plat_dummy_device, dwork_write.work);
+	
+	iowrite32(jiffies, my_device->mem);
+	
+	pr_info("dev/mem/ write ok\n");
+	
+	schedule_delayed_work(&my_device->dwork_write, msecs_to_jiffies(10000));
+		
+
+
+
 }
 static const struct of_device_id plat_dummy_of_match[] = {
 	{
@@ -155,9 +176,23 @@ static int plat_dummy_probe(struct platform_device *pdev)
 	if (!my_device->data_read_wq)
 		return -ENOMEM;
 
-	INIT_DELAYED_WORK(&my_device->dwork, plat_dummy_work);
+	INIT_DELAYED_WORK(&my_device->dwork, plat_dummy_work_read);
 	my_device->js_pool_time = msecs_to_jiffies(DEVICE_POOLING_TIME_MS);
 	queue_delayed_work(my_device->data_read_wq, &my_device->dwork, 0);
+	
+	/*Init data write WQ*/
+	
+	my_device->data_write_wq = alloc_workqueue("plat_dummy_write",
+					WQ_UNBOUND, MAX_DUMMY_PLAT_THREADS);
+
+	if (!my_device->data_write_wq)
+		return -ENOMEM;
+
+	
+	INIT_DELAYED_WORK(&my_device->dwork_write, plat_dummy_work_write);
+	my_device->js_pool_time_write = msecs_to_jiffies(DEVICE_POOLING_TIME_MS);
+	schedule_delayed_work(&my_device->dwork_write, msecs_to_jiffies(10000));
+	
 
 	return PTR_ERR_OR_ZERO(my_device->mem);
 }
@@ -172,6 +207,11 @@ static int plat_dummy_remove(struct platform_device *pdev)
 	/* Destroy work Queue */
 		cancel_delayed_work_sync(&my_device->dwork);
 		destroy_workqueue(my_device->data_read_wq);
+	}
+	if (my_device->data_write_wq) {
+	/* Destroy work Queue */
+		cancel_delayed_work_sync(&my_device->dwork_write);
+		destroy_workqueue(my_device->data_write_wq);
 	}
 
         return 0;

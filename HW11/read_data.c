@@ -13,7 +13,6 @@
 
 int main(int argc, char **argv)
 {
-	printf("start\n");
 	volatile unsigned int *mem_addr = NULL;
 	unsigned int i, num = 0, val;
 	unsigned int jiffies_data = 0;

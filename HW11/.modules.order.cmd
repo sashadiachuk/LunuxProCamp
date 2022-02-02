@@ -1,0 +1,1 @@
+cmd_/home/odiachuk/Desktop/LunuxProCamp/HW11/modules.order := {   echo /home/odiachuk/Desktop/LunuxProCamp/HW11/platform_test_dts.ko; :; } | awk '!x[$$0]++' - > /home/odiachuk/Desktop/LunuxProCamp/HW11/modules.order

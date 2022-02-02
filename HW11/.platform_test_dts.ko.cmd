@@ -1,0 +1,1 @@
+cmd_/home/odiachuk/Desktop/LunuxProCamp/HW11/platform_test_dts.ko := ccache arm-eabi-ld -r  -EL  --build-id=sha1  -T scripts/module.lds -o /home/odiachuk/Desktop/LunuxProCamp/HW11/platform_test_dts.ko /home/odiachuk/Desktop/LunuxProCamp/HW11/platform_test_dts.o /home/odiachuk/Desktop/LunuxProCamp/HW11/platform_test_dts.mod.o;  true
