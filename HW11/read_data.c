@@ -7,17 +7,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define REG_BASE  0x9f201000
 #define TIME_BASE 0x9f201008
-#define REG_SIZE	(8)
 #define TIME_SIZE	(8)
 
-#define PLAT_IO_FLAG_REG		(0) /*Offset of flag register*/
-#define PLAT_IO_SIZE_REG		(4) /*Offset of flag register*/
-#define PLAT_IO_DATA_READY	(1) /*IO data ready flag */
-
-
-extern int errno;
 volatile unsigned int *reg_addr = NULL;
 volatile unsigned int  *time_addr = 0;
 
@@ -36,12 +28,12 @@ int main(int argc, char **argv)
 		return -1;
 	}
 	
-	reg_addr = (unsigned int *) mmap(0, REG_SIZE, PROT_WRITE |PROT_READ, MAP_SHARED, fd, REG_BASE);
+	/*reg_addr = (unsigned int *) mmap(0, REG_SIZE, PROT_WRITE |PROT_READ, MAP_SHARED, fd, REG_BASE);
 	if(reg_addr == NULL)
 	{
 		printf("Can't reg_addr mmap\n");
 		return -1;
-	}
+	}*/
 	//map registers of the device in address space of our machine 
 	time_addr = (unsigned int *) mmap(0, TIME_SIZE, PROT_WRITE |PROT_READ, MAP_SHARED, fd, TIME_BASE);
 	if(time_addr == NULL)
@@ -49,11 +41,8 @@ int main(int argc, char **argv)
 		printf("Can't  time_addr mmap\n");
 		return -1;
 	}
-	printf("tut\n");
-	printf("%p\n", reg_addr);
-	printf("%p\n", time_addr);
-	jiffies_data=*(time_addr);
-	printf("jiffies_data: %u\n", jiffies_data);
-
+	//printf("%d\n", *reg_addr);
+	printf("%d\n", *time_addr);
+	
 	return 0;
 }
