@@ -26,14 +26,6 @@
 #define PLAT_IO_SIZE_REG		(4) /*Offset of flag register*/
 #define PLAT_IO_DATA_READY	(1) /*IO data ready flag */
 #define MAX_DUMMY_PLAT_THREADS 1 /*Maximum amount of threads for this */
-/*for write*/
-#define TIME_SIZE	(4)
-
-
-
-
-
-
 
 //homework(write data from kernel to device) read from dev/mem -> create buffer for data in dev/mem, adress range for reg counter and  synch flag, and we need separated workqueue, which will send data from kernel(e.g. jiffies values with some period)
 
@@ -43,7 +35,6 @@
 struct plat_dummy_device {
 	void __iomem *mem;
 	void __iomem *regs;
-	void __iomem *time_reg;//need to map
 	struct delayed_work     dwork;
 	struct workqueue_struct *data_read_wq;
 	u64 js_pool_time;
@@ -76,11 +67,7 @@ static void plat_dummy_work(struct work_struct *work)//callback function of work
 
 	my_device = container_of(work, struct plat_dummy_device, dwork.work);
 	status = plat_dummy_reg_read32(my_device, PLAT_IO_FLAG_REG);
-	//plat_dummy_reg_write32(my_device, PLAT_IO_FLAG_REG+TIME_SIZE, );
 	
-	
-	
-
 	if (status & PLAT_IO_DATA_READY) {
 		size = plat_dummy_reg_read32(my_device, PLAT_IO_SIZE_REG);
 		pr_info("%s: size = %d\n", __func__, size);
@@ -99,7 +86,7 @@ static void plat_dummy_work(struct work_struct *work)//callback function of work
 
 	}
 	queue_delayed_work(my_device->data_read_wq, &my_device->dwork, my_device->js_pool_time);//restart
-	iowrite8(0x41, my_device->time_reg);
+	iowrite32(jiffies, my_device->mem);
 	wmb();
 	pr_info("dev/mem/ write ok\n");
 			
@@ -152,19 +139,11 @@ static int plat_dummy_probe(struct platform_device *pdev)
 	my_device->regs = devm_ioremap_resource(&pdev->dev, res);
 	if (IS_ERR(my_device->regs))
 		return PTR_ERR(my_device->regs);
-
-	res = platform_get_resource(pdev, IORESOURCE_MEM, 2);//get a resource for a  device .
-	pr_info("res 2 = %zx..%zx\n", res->start, res->end);
 	
-	my_device->time_reg = devm_ioremap_resource(&pdev->dev, res);
-	if (IS_ERR(my_device->time_reg))
-		return PTR_ERR(my_device->time_reg);
-
 	platform_set_drvdata(pdev, my_device);//add date related to my device to the device struct
 
 	pr_info("Memory mapped to %p\n", my_device->mem);
 	pr_info("Registers mapped to %p\n", my_device->regs);
-	pr_info("time_reg mapped to %p\n", my_device->time_reg);
 	pr_info("-------------------------------------\n");
 	
 	

@@ -67,7 +67,7 @@ static vm_fault_t vm_fault(struct vm_fault *vmf)
 	 
         if (vmf->vma->vm_pgoff == NPAGES) {
 		 //vmf->page = pfn_to_page(virt_to_phys((void *)kmalloc_area) >> PAGE_SHIFT );//previous version - always read the same addresses, issue to fix:  move in kmalloc area from page to page
-		 vmf->page = virt_to_page((char *)kmalloc_area + PAGE_SIZE * (vmf->pgoff - NPAGES));
+		 vmf->page = virt_to_page((char *)kmalloc_area + PAGE_SIZE * (vmf->pgoff ));//*(vmf->pgoff- NPAGES )
 		 get_page(vmf->page); //fault handlers should return a  page here,
 		 pr_warn("kmalloc page fault handler executed\n");
         }
