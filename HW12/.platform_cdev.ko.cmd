@@ -1,0 +1,1 @@
+cmd_/home/odiachuk/Desktop/LunuxProCamp/HW12/platform_cdev.ko := ccache arm-eabi-ld -r  -EL  --build-id=sha1  -T scripts/module.lds -o /home/odiachuk/Desktop/LunuxProCamp/HW12/platform_cdev.ko /home/odiachuk/Desktop/LunuxProCamp/HW12/platform_cdev.o /home/odiachuk/Desktop/LunuxProCamp/HW12/platform_cdev.mod.o;  true

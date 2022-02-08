@@ -1,0 +1,5 @@
+As homework for the Charactrer device driver lesson, update the platform_cdev.c and platform_test.c as follows:
+
+1. Add method "write" to platform_cdev driver. This method should transfer data from user space application to the appropriate platform device (i.e. cat file.txt > /dev/dummy/dummyX). - done.
+2. Implement user space application that will read the data sent by above stated "write" method.
+3. Demonstrate that driver supports 2 dummy devices and data is consistent after transfer.
