@@ -1,1 +1,0 @@
-cmd_/home/odiachuk/Desktop/LunuxProCamp/HW12/platform_cdev.mod := { echo  /home/odiachuk/Desktop/LunuxProCamp/HW12/platform_cdev.o;  echo; } > /home/odiachuk/Desktop/LunuxProCamp/HW12/platform_cdev.mod

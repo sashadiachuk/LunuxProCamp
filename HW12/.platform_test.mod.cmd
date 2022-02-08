@@ -1,1 +1,0 @@
-cmd_/home/odiachuk/Desktop/LunuxProCamp/HW12/platform_test.mod := { echo  /home/odiachuk/Desktop/LunuxProCamp/HW12/platform_test.o;  echo; } > /home/odiachuk/Desktop/LunuxProCamp/HW12/platform_test.mod
