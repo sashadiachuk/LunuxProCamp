@@ -30,34 +30,33 @@ int main(int argc, char **argv)
 	volatile unsigned int *reg_addr = NULL, *count_addr, *flag_addr;
 	volatile unsigned char *mem_addr = NULL;
 	volatile unsigned char *mem_addr1 = NULL;
-	unsigned int i, device, ret, len, count;
+	volatile unsigned char i;
 	struct stat st;
 	uint8_t *buf;
 	FILE *f;
 	
 	
-	int fd = open("/dev/mem",O_RDWR|O_SYNC);
+	int fd = open("/dev/dummy/dummy0",O_RDWR|O_SYNC);
 	if(fd < 0)
 	{
 		printf("Can't open /dev/mem\n");
 		return -1;
 	}
-	mem_addr = (unsigned char *) mmap(0,MEM_SIZE, PROT_WRITE, MAP_SHARED, fd, MEM_BASE1);
-	if(mem_addr == NULL)
+	
+	read(fd , buffer ,sizeof(buffer));
+	printf("dummy0 %s\n",buffer);
+	close(fd);
+	printf("---------------------------------------------\n");
+	
+	fd = open("/dev/dummy/dummy1",O_RDWR|O_SYNC);
+	if(fd < 0)
 	{
-		printf("Can't mmap\n");
+		printf("Can't open /dev/mem\n");
 		return -1;
 	}
-	mem_addr1 = (unsigned char *) mmap(0,MEM_SIZE, PROT_WRITE, MAP_SHARED, fd, MEM_BASE2);
-	if(mem_addr1 == NULL)
-	{
-		printf("Can't mmap1\n");
-		return -1;
-	}
 	
-	
-	printf("dummy0 %d\n", *(mem_addr));
-	printf("dummy1 %d\n", *(mem_addr1));
-	
+	read(fd , buffer ,sizeof(buffer));
+	printf("dummy1 %s\n",buffer);
+	close(fd);
 	return 0;
 }

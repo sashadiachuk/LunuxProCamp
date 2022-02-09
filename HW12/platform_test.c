@@ -227,7 +227,7 @@ static void plat_dummy_work(struct work_struct *work)
 		plat_dummy_reg_write32(my_device, PLAT_IO_FLAG_REG, status);
 	}
 exit_wq:
-	queue_delayed_work(my_device->data_read_wq, &my_device->dwork, js_time);
+	queue_delayed_work(my_device->data_read_wq, &my_device->dwork, my_device->js_pool_time);
 }
 
 static void dummy_init_data_buffer(struct plat_dummy_device *my_device)
