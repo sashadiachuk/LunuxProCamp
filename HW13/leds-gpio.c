@@ -31,10 +31,21 @@ static int dndMode = 0;
 If need to reffer between device and driver (need ), use field compatible, in device tree file and compatible in driver file, it should be the same 
  - here, in device tree "gpio-leds" and in driver also "gpio-leds".
 
-*/
 
 
 
+kstrtoint - convert a string to an int
+ * @s: The start of the string. The string must be null-terminated, and may also
+ *  include a single newline before its terminating null. The first character
+ *  may also be a plus sign or a minus sign.
+ * @base: The number base to use. The maximum supported base is 16. If base is
+ *  given as 0, then the base of the string is automatically detected with the
+ *  conventional semantics - If it begins with 0x the number will be parsed as a
+ *  hexadecimal (case insensitive), if it otherwise begins with 0, it will be
+ *  parsed as an octal number. Otherwise it will be parsed as a decimal.
+ * @res: Where to write the result of the conversion on success.
+ */
+ 
 #define LEN_MSG 2
 
 #define IOFUNCS( name )                                                         \
