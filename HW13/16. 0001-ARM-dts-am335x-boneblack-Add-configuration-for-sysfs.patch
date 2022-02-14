@@ -1,0 +1,31 @@
+From 46587d9b30d1c7773061b8bf076035f657e08a72 Mon Sep 17 00:00:00 2001
+From: Illia Smyrnov <illia.smyrnov@globallogic.com>
+Date: Mon, 25 Nov 2019 07:33:30 +0200
+Subject: [PATCH] ARM: dts: am335x-boneblack: Add configuration for
+ sysfs-sample
+
+Add configuration for sysfs-sample platform device used
+in sysfs-probe example.
+
+Signed-off-by: Illia Smyrnov <illia.smyrnov@globallogic.com>
+---
+ arch/arm/boot/dts/am335x-boneblack.dts | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/arch/arm/boot/dts/am335x-boneblack.dts b/arch/arm/boot/dts/am335x-boneblack.dts
+index d154d3133c16..d313922dbce9 100644
+--- a/arch/arm/boot/dts/am335x-boneblack.dts
++++ b/arch/arm/boot/dts/am335x-boneblack.dts
+@@ -26,3 +26,9 @@
+ 		opp-supported-hw = <0x06 0x0100>;
+ 	};
+ };
++
++/ {
++	sysfs-sample {
++		compatible = "sysfs-sample";
++	};
++};
+-- 
+2.20.1
+
