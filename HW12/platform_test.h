@@ -2,8 +2,8 @@
 #define _PLATFORM_TEST_H_
 
 #include <linux/mm.h>
-
-#define DUMMY_IO_BUFF_SIZE (5*1024)
+// 5 * 1024 
+#define DUMMY_IO_BUFF_SIZE (1024/2)
 struct plat_dummy_device {
 	struct platform_device *pdev;
 	void __iomem *mem;

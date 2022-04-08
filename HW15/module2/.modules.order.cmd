@@ -1,0 +1,1 @@
+cmd_/home/odiachuk/Desktop/LunuxProCamp/HW15/module2/modules.order := {   echo /home/odiachuk/Desktop/LunuxProCamp/HW15/module2/hw2.ko; :; } | awk '!x[$$0]++' - > /home/odiachuk/Desktop/LunuxProCamp/HW15/module2/modules.order

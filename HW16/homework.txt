@@ -1,0 +1,15 @@
+Please find lecture 17 materials in the attachment:
+  * bbb-hw2.pdf: slides for this lecture
+  * module3.tar.gz: tarball with "Attempt #3" module sources:
+    - hw3.c: driver code
+    - hw3.h: ioctl interface (for both driver and user space app)
+    - hw3-app.c: user space app
+    - dts.txt: our device's definition; add this to BBB dts file
+    - Makefile: builds both kernel driver and user space app
+    - dtbo/: device tree overlay fragment; ignore this or you can
+experiment with this
+
+Waiting for your completed assignments (can be found in the end of
+slides). Just reply to this mail with your screenshots/photos/videos.
+Assignment #1 and assignment #2 are mandatory. Assignment #3 is optional.
+

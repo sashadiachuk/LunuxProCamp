@@ -1,0 +1,1 @@
+cmd_/home/odiachuk/Desktop/LunuxProCamp/HW15/module1/hw1.ko := ccache arm-eabi-ld -r  -EL  --build-id=sha1  -T scripts/module.lds -o /home/odiachuk/Desktop/LunuxProCamp/HW15/module1/hw1.ko /home/odiachuk/Desktop/LunuxProCamp/HW15/module1/hw1.o /home/odiachuk/Desktop/LunuxProCamp/HW15/module1/hw1.mod.o;  true

@@ -22,7 +22,7 @@
 
 #define MAX_DEVICES	2
 
-char buffer[100]; 
+char buffer[2 * 1024]; 
 
 
 int main(int argc, char **argv)

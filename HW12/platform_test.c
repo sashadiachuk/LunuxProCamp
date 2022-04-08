@@ -98,9 +98,9 @@ static ssize_t plat_dummy_read(struct plat_dummy_device *my_device, char __user 
 	pr_info("count = %zu, my_device->rp = %p, my_device->wp = %p\n", count, my_device->rp, my_device->wp);
 
 	if (my_device->wp > my_device->rp)
-		count = min(count, (size_t)(my_device->wp - my_device->rp));
+		count = min(count, (size_t)(my_device->wp - my_device->rp));//if smth in buffer, calculate amount of symbols in buffer
 	else /* the write pointer has wrapped, return data up to dev->end */
-		count = min(count, (size_t)(my_device->end - my_device->rp));
+		count = min(count, (size_t)(my_device->end - my_device->rp));// else return left size of buffer
 
 	if (copy_to_user(buf, my_device->rp, count)) {
 		mutex_unlock (&my_device->rd_mutex);
@@ -123,17 +123,20 @@ static ssize_t plat_dummy_write(struct plat_dummy_device *my_device, const char 
 		return -ERESTARTSYS;
 
 	pr_info("++%s: my_device->rp = %p, my_device->wp = %p\n", __func__, my_device->rp, my_device->wp);
-	//
-	
+		
+	count = min(count, (size_t)(my_device->end - my_device->wp));	
+		
 	if (copy_from_user(my_device->wp,buf, count)) {
 		mutex_unlock (&my_device->rd_mutex);
 		return -EFAULT;
 	}
-	
 	my_device->wp += count;
-	if (my_device->wp == my_device->end)
+	if (my_device->wp >= my_device->end)
 		my_device->wp = my_device->buffer; /* wrapped */
 	pr_info("\"%s\" did write %li bytes\n",current->comm, (long)count);
+	
+	
+
 	pr_info("++%s: my_device->rp = %p, my_device->wp = %p\n", __func__, my_device->rp, my_device->wp);
 	mutex_unlock(&my_device->rd_mutex); 
 	return count;
